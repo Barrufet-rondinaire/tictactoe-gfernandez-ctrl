@@ -11,26 +11,45 @@ namespace TicTacToe;
 class Program
 {
     private static readonly HttpClient client = new HttpClient { BaseAddress = new Uri("http://localhost:8080/") };
-    static void Main(string[] args)
-    {
-        var LlistaDeJugadors = client.GetFromJsonAsync<List<string>>("jugadors").Result;
-        
-        Regex rg = new Regex(@"participant.([A-Z]+\w+ [A-Z-'a-z]+\w+).*representa(nt)? (a |de )([A-Z-a-z]+\w+)");
-        
-        Regex rga = new Regex(@"participant.([A-Z]+\w+ [A-Z-'a-z]+\w+).*desqualifica(da|t)");
+    private const string JugadorDesqualificada = "Espanya";
 
-        foreach (var jugadors in LlistaDeJugadors)
+    
+        static async Task Main(string[] args)
         {
-            Match m = rga.Match(jugadors);
-            string nom = m.Groups[1].Value;
-            string pais = m.Groups[2].Value;
-            if (nom != "Anhoa Ojeda")
+            var participants = await client.GetFromJsonAsync<List<string>>("jugadors");
+            var partides = await client.GetFromJsonAsync<List<string>>("partides");
+            
+            Dictionary<string, string> jugadors = new();
+            HashSet<string> desqualificats = new();
+            Dictionary<string, int> victòries = new();
+            
+            Regex regexJugador = new(@"participant.([A-Z]+\w+ [A-Z-'a-z]+\w+).*representa(nt)? (a |de )([A-Z-a-z]+\w+)");
+            Regex regexDesqualificat = new(@"participant.([A-Z]+\w+ [A-Z-'a-z]+\w+).*desqualifica(da|t)");
+            
+            foreach (var entrada in participants)
             {
-            jugador.Add (nom, pais);
-            Console.WriteLine ($"El jugador és {nom} i el seu pais és {pais}");
+                Match match = regexJugador.Match(entrada);
+                if (match.Success)
+                {
+                    string nom = match.Groups[1].Value;
+                    string pais = match.Groups[4].Value;
+                    jugadors[nom] = pais;
+                }
+                else
+                {
+                    Match matchDesq = regexDesqualificat.Match(entrada);
+                    if (matchDesq.Success)
+                    {
+                        string nom = matchDesq.Groups[1].Value;
+                        desqualificats.Add(nom);
+                    }
+                }
             }
-        }
-        
+
+
+
     }
+      
+    
     
 }
